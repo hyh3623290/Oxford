@@ -1,8 +1,8 @@
-
+# Vue
 
 组件通信
 
-# $attrs/$listeners
+## $attrs/$listeners
 
 ​	包含了父作用域中不作为 prop 被识别 (且获取) 的特性绑定 ( class 和 style 除外)。当一个组件没有 声明任何 prop 时，这里会包含所有父作用域的绑定 ( class 和 style 除外)，并且可以通过 vbind="$attrs" 传入内部组件——在创建高级别的组件时非常有用。
 
@@ -21,7 +21,7 @@ onClick() {
 <p v-on="$listeners"></p> // 事件会被展开
 ```
 
-# 插槽
+## 插槽
 
 ```jsx
 // 匿名
@@ -49,7 +49,7 @@ onClick() {
 </Cmp>
 ```
 
-# 通用表单组件设计
+## 通用表单组件设计
 
 ​	收集数据、校验数据并提交。
 
@@ -67,7 +67,7 @@ onClick() {
 
 ​	最外层form应依次执行formItem的校验方法，同时把自身整个传下去。这样item可以拿到整个form实例，进一步获取属于自己的数据并校验，最里面input负责派发事件。
 
-## index.vue
+### index.vue
 
 在index里提供model，rules，并执行form的validate方法
 
@@ -134,7 +134,9 @@ export default {
 </style>
 ```
 
-## Form.vue
+
+
+### Form.vue
 
 1. 需要一个插槽
 2. provide让子组件可以获取这个表单
@@ -183,7 +185,9 @@ export default {
 </style>
 ```
 
-## FormItem
+
+
+### FormItem
 
 1. 显示label
 2. 插槽放input
@@ -254,7 +258,9 @@ export default {
 </script>
 ```
 
-## input
+
+
+### input
 
 接收父级的value并且在触发input的事件时传入value给父级，触发父级的validate方法
 
@@ -297,7 +303,7 @@ export default {
 </style>
 ```
 
-# 弹窗组件设计
+## 弹窗组件设计
 
 ​	弹窗这类组件的特点是它们在当前vue实例之外独立存在，通常挂载于body；它们是通过JS动态创建 的，不需要在任何组件中声明。常见使用姿势：
 
@@ -342,7 +348,7 @@ Element 源码 - pakeages文件夹很重要几乎所有源码都在这里，src�
 
 emitter做广播，冒泡来代替之前表单的$parent,$children。为了程序的鲁棒性。（dispatch方法）
 
-# VueRouter
+## VueRouter
 
 **需求分析** 
 
@@ -474,6 +480,10 @@ KVueRouter.install = function (_Vue) {
 export default KVueRouter
 ```
 
-1.13.10
 
-# 
+
+
+
+
+
+------------------------------------
