@@ -164,11 +164,43 @@ export default class Dialog extends Component {
 
 ```
 
+# Redux
 
+​	Redux 主要由三部分组成：**store、reducer 和 action**。**在 Redux 的整个工作过程中，数据流是严格单向的**。这一点一定一定要背下来，面试的时候也一定一定要记得说——不管面试官问的是 Redux 的设计思想还是工作流还是别的什么概念性的知识，开局先放这句话，准没错。
 
-# redux
+**1. 使用 createStore 来完成 store 对象的创建**
 
-## 预备
+```js
+// 引入 redux
+import { createStore } from 'redux'
+// 创建 store
+const store = createStore(
+    reducer,
+    initial_state,
+    applyMiddleware(middleware1, middleware2, ...)
+);
+```
+
+​	这其中一般来说，只有 reducer 是你不得不传的。下面我们就看看 reducer 的编码形态是什么样的。
+
+**2. reducer 的作用是将新的 state 返回给 store**
+
+​	一个 reducer 一定是一个纯函数，它可以有各种各样的内在逻辑，但它最终一定要返回一个 state：
+
+```js
+const reducer = (state, action) => {
+    // 此处是各种样的 state处理逻辑
+    return new_state
+}
+```
+
+​	当我们基于某个 reducer 去创建 store 的时候，其实就是给这个 store 指定了一套更新规则：
+
+**3. action 的作用是通知 reducer “让改变发生”**
+
+**4. 派发 action，靠的是 dispatch**
+
+## reduce
 
 有如下函数， 聚合成一个函数，并把第一个函数的返 回值传递给下一个函数，如何处理
 
@@ -187,6 +219,8 @@ function f3(arg) {
 }
 ```
 
+
+
 ```js
 // 1. 
 let res = f1(f2(f3("omg")))
@@ -204,6 +238,8 @@ function compose(...funcs) {
   return funcs.reduce((f, fn) => (...args) => f(fn(...args)))
 }
 // 当你遇到一个累加，传递的操作时就可以想到reduce了
+// reduce接收一个函数，函数接收两个参数，一个是累计值，一个是当前值
+// 函数返回到结果会给到累计值里,刚开始时为数组前两个
 ```
 
 
@@ -217,9 +253,7 @@ import store from '../components/kredux'
 export default class ReduxPage extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      
-    };
+    this.state = {};
   }
   add = () => {
     store.dispatch({type: "ADD"})
@@ -308,7 +342,7 @@ export function applyMiddleware(...middlewares) {
       getState: store.getState,
     }
     const chain = middlewares.map(mw => mw(reduxApi))
-    dispatch = compose(...chain)(store.dispatch)
+    dispatch = compose(...chain)(dispatch) // thunk(logger(reduxApi)(dispatch))
     return {
       ...store,
       dispatch
@@ -337,7 +371,7 @@ function logger() {
 }
 
 // thunk
-function thunk() {
+function thunk({dispatch, getState}) {
   return dispatch => action => {
     if(typeof action === "function") {
       return action(dispatch, getState)
