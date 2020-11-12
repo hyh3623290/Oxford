@@ -200,6 +200,19 @@ const reducer = (state, action) => {
 
 **4. 派发 action，靠的是 dispatch**
 
+combineReducer
+
+```js
+createStore(
+	combineReducer({
+    count: countReducer
+  })
+)
+// store.getState().count
+```
+
+
+
 ## reduce
 
 有如下函数， 聚合成一个函数，并把第一个函数的返 回值传递给下一个函数，如何处理
@@ -388,6 +401,18 @@ function thunk({dispatch, getState}) {
 
 ## 预备
 
+```jsx
+import { Provider } from 'react-redux'
+ReactDOM.render(
+	<Provider store={tore}>
+  	<App />
+  </Provider>,
+  document.getElementById('root')  
+)
+```
+
+
+
 ```js
 export default connect()(
   class Cmp extends Component {
@@ -416,6 +441,8 @@ export default connect(
     }
   }
 )()
+// mapStateToProps 函数
+// mapDispatchToProps 对象/函数
 ```
 
 ​	你再看输出的props发现里面连count都有了，接下来看mapDispatchToProps，它是一个**对象**，如果不指定它的话默认dispatch注入props，所以我一般就只写mapState，不写mapDispatch
