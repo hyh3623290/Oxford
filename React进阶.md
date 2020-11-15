@@ -1,6 +1,6 @@
 # Form
 
-⽤Form.create()的⽅式实现： 
+​	⽤Form.create()的⽅式实现： 我希望可以通过getFieldDecorator与input进行绑定，方便以后用getFieldsValue之类拿到各个表单的值，并且能够用validateFields进行校验
 
 - getFieldDecorator： ⽤于和表单进⾏双向绑定
 
@@ -189,8 +189,15 @@ const store = createStore(
 
 ```js
 const reducer = (state, action) => {
-    // 此处是各种样的 state处理逻辑
-    return new_state
+  // 此处是各种样的 state处理逻辑，如下
+  switch (action.type) {
+    case "ADD":
+      return {...state, count: state.count+1}
+    case "MINUS":
+      return {...state, count: state.count-1}
+    default:
+      return state;
+  }
 }
 ```
 
@@ -397,7 +404,7 @@ function thunk({dispatch, getState}) {
 
 ```
 
-# react-redux
+# React-Redux
 
 ## 预备
 
@@ -414,7 +421,9 @@ ReactDOM.render(
 
 
 ```js
-export default connect()(
+export default connect(
+	state => ({ count: state.count })// es6写法，相当于直接return这个对象
+)(
   class Cmp extends Component {
     render() {
       console.log(this.props)
@@ -424,20 +433,17 @@ export default connect()(
 )
 ```
 
-可以看到输出的里面就有个dispatch属性了，那如何拿到state呢
+
 
 ```js
-export default connect(
-  state => ({ count: state.count })
-)()
-
-// 可以接收两个参数，第二个为该组件本身的props,就是没有被高阶组件修饰前的props
-// 但是这个ownProps谨慎使用,因为它变化的话mapState会重新执行,state也会被重新计算,影响性能
+// mapState可以接收两个参数，第二个为该组件本身的props,就是没有被高阶组件修饰前的props
+// 但是这个ownProps谨慎使用,因为它变化的话mapState这个函数会重新执行,state也会被重新计算,影响性能
+// 假设1处那个获取state的计算比较复杂的话
 export default connect(
   (state, ownProps) => {
     console.log(ownProps)
     return {
-      count: state.count
+      count: state.count // 1
     }
   }
 )()
@@ -461,7 +467,7 @@ export default connect(
 ```js
 export default connect(
   state => ({ count: state.count }),
-  dispatch => {
+  dispatch => {// 这里第二个参数也可以接收ownProps
     let res = {
       add: () => dispatch({ type: 'ADD' })
       minus: () => dispatch({ type: 'MINUS' })
@@ -481,7 +487,7 @@ import { bindActionCreators } from 'redux'
 
 export default connect(
   state => ({ count: state.count }),
-  dispatch => { // 这里第二个参数也可以接收ownProps
+  dispatch => { 
     let res = {
       add: () => ({ type: 'Add' }),
       minus: () => ({ type: "Minus" })
@@ -516,21 +522,32 @@ export function bindActionCreators(creators, dispatch) {
 }
 ```
 
+此外其实还有一个参数
 
+`mergeProps(stateProps,dispatchProps,ownProps){`
 
-## 效果
+​		`return {omg:'omg', ...stateProps ...}`
 
-```jsx
+`}`
 
+```js
+(stateProps, dispatchProps, ownProps) => {
+  console.log(stateProps) // connect里的state
+  console.log(dispatchProps) // connect里的dispatch
+  console.log(ownProps) // 自己的props
+  return { ...stateProps, ...dispatchProps, ...ownProps, omg: "omg" }
+}
 ```
-
-
 
 
 
 ## 手写react-redux
 
-要有provider和connect，还要传store，怎么传呢，就是context
+​	react-redux其实就是connect和Provider，Provider简单，创建一个context，从props里拿到store直接传下去就好，并且它只需要渲染this.props.children。
+
+​	connect就是一个高阶函数，它接收两个参数，接收一个组件并返回这个组件。只需要把store里的state和dispatch传给这个组件即可。如何拿到呢，就是consumer。记得要把state传给mapStateToProps函数的参数，dispatch要给默认值。如果mapDispatchToProps是函数和对象的时候要给不同的操作。因为每次state变化子组件要重新渲染，所以你必须把需要传的数据放到state里去
+
+​	**总结：**其实没有什么东西，就是高阶组件connect从context拿值传给子组件
 
 ```jsx
 import React, {Component} from "react";
@@ -562,7 +579,7 @@ export const connect = (
 
     update = () => {
       const {getState, dispatch, subscribe} = this.context;
-      //  getState获取当前store的state
+      // 传函数就可以用函数形式接收，参数就是传的函数的参数
       let stateProps = mapStateToProps(getState());
       let dispatchProps;
       // mapDispatchToProps Object/Function
@@ -612,16 +629,7 @@ export function bindActionCreators(creators, dispatch) {
   }
   return obj;
 }
-
 ```
-
-
-
-
-
-
-
-
 
 
 
@@ -654,13 +662,7 @@ render() {
 
 两个箭头的写法：首先App(Cmp) 返回的是一个函数，那App(Cmp)(k)，k就是props
 
-
-
-
-
 - for in遍历的是数组的索引（即键名），而for of遍历的是数组元素值。
-
-  
 
 - reduce
 
@@ -677,46 +679,6 @@ render() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ----------------------------------------------------
 
 - jsx需要babel编译才可以使用
@@ -727,32 +689,52 @@ render() {
 
 `Object.values(data)`输出value
 
-- **条件渲染**：`{true && "成立输出"}`	`{false || "不成立则输出"}`
 
-- class要写作className，style接收的是一个对象
-
-```html
-let style = {
-  width: "20px",
-  height: "20px"
-}
-ReactDom.render(
-  <div className="box" style={style}>
-  	<p>hello react</p>
-  </div>,
-  document.querySelector("#root"),
-)
-```
-
-​	此外所有标签名小写
-
-​	如果不希望父元素被渲染，可以用`React.Fragment`
 
 - React事件里面是没有this的，输出是undefined
 
 ```jsx
 <div onClick={fucntion(){ console.log(this) }}></div>
 ```
+
+
+
+# React原理
+
+​	虚拟DOM到真实DOM的同步过程，成为协调。
+
+**初始化**
+
+```jsx
+import React from './components/KReact'
+import ReactDOM from './components/KReact/ReactDOM'
+
+const jsx = <div className="border">app</div>
+
+ReactDOM.render(jsx, document.getElementById('root'))
+```
+
+KReact.js
+
+```js
+function createElement(props) {}
+
+export default {
+  createElement
+}
+```
+
+KReactDOM.js
+
+```js
+function render(props) {}
+
+export default {
+  render
+}
+```
+
+​	这样就不报错了。
 
 
 

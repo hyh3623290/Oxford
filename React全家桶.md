@@ -144,13 +144,13 @@ let { goBack } = useHistory()
 
 ## Route渲染方式
 
-​	**Route渲染优先级**：children>component>render。这三种方式互斥，你只能用⼀种。三者能接收到同样的[route props]，包括match, location and history，但是当不匹配的时候，children的match为 null
+​	route如果不写path，则一直匹配。Route渲染优先级：children>component>render。 三者能接收到同样的[route props]，包括match, location and history，但是当不匹配的时候，children的match为 null。
 
-​	**children**和**render**使用方式一样，只不过children不管有没有匹配到都显示
+​	有时候，不管location是否匹配，你都需要渲染⼀些内容，这时候你可以⽤children。其它⼯作⽅法与 render完全⼀样。当你⽤render的时候，你调⽤的只是个函数。component传一个组件，只在当location匹配的时候渲染
 
 ​	**component**的话其实也可以用函数的方式写，但是这样不好`<Route component={()=><child />}>`，这样的话组件更新的时候会不停的挂载卸载。因为渲染component的时候会调用React.createElement，如果使用下面这种匿名函数的形式，每次都会生成一个新的匿名的函数，导致生成的组件的type总是不相同，这个时候会产生重复的卸载和挂载。为什么type值不同，因为它是匿名函数，两个匿名函数怎么能相同呢
 
-​	当你⽤component的时候，Router会用你指定的组件和 React.createElement创建一个新的[React element]。这意 味着当你提供的是一个内联函数的时候，每次render都会创建一个新的组件。这会导致不再更更新已经现有组件，而是直接卸载然后再去挂载一个新的组件。因此，当⽤用到内联函数的内联渲染时，请使⽤用render或者children。
+​	当你⽤component的时候，Router会用你指定的组件和 React.createElement创建一个新的[React element]。这意 味着当你提供的是一个内联函数的时候，每次render都会创建一个新的组件。这会导致不再更新已经现有组件，而是直接卸载然后再去挂载一个新的组件。因此，当⽤用到内联函数的内联渲染时，请使⽤用render或者children。
 
 
 
@@ -196,7 +196,7 @@ export default class LoginPage extends Component {
     } else {
       return <h1>LoginPage</h1>
     }
-  }
+  } 
 }
 ```
 
