@@ -166,60 +166,6 @@ export default class Dialog extends Component {
 
 # Redux
 
-​	Redux 主要由三部分组成：**store、reducer 和 action**。**在 Redux 的整个工作过程中，数据流是严格单向的**。这一点一定一定要背下来，面试的时候也一定一定要记得说——不管面试官问的是 Redux 的设计思想还是工作流还是别的什么概念性的知识，开局先放这句话，准没错。
-
-**1. 使用 createStore 来完成 store 对象的创建**
-
-```js
-// 引入 redux
-import { createStore } from 'redux'
-// 创建 store
-const store = createStore(
-    reducer,
-    initial_state,
-    applyMiddleware(middleware1, middleware2, ...)
-);
-```
-
-​	这其中一般来说，只有 reducer 是你不得不传的。下面我们就看看 reducer 的编码形态是什么样的。
-
-**2. reducer 的作用是将新的 state 返回给 store**
-
-​	一个 reducer 一定是一个纯函数，它可以有各种各样的内在逻辑，但它最终一定要返回一个 state：
-
-```js
-const reducer = (state, action) => {
-  // 此处是各种样的 state处理逻辑，如下
-  switch (action.type) {
-    case "ADD":
-      return {...state, count: state.count+1}
-    case "MINUS":
-      return {...state, count: state.count-1}
-    default:
-      return state;
-  }
-}
-```
-
-​	当我们基于某个 reducer 去创建 store 的时候，其实就是给这个 store 指定了一套更新规则：
-
-**3. action 的作用是通知 reducer “让改变发生”**
-
-**4. 派发 action，靠的是 dispatch**
-
-combineReducer
-
-```js
-createStore(
-	combineReducer({
-    count: countReducer
-  })
-)
-// store.getState().count
-```
-
-
-
 ## reduce
 
 有如下函数， 聚合成一个函数，并把第一个函数的返 回值传递给下一个函数，如何处理
@@ -717,7 +663,7 @@ ReactDOM.render(jsx, document.getElementById('root'))
 KReact.js
 
 ```js
-function createElement(props) {}
+function createElement(type, props, children) {}
 
 export default {
   createElement
@@ -727,14 +673,116 @@ export default {
 KReactDOM.js
 
 ```js
-function render(props) {}
+function render(vnode, container) {}
 
 export default {
   render
 }
 ```
 
-​	这样就不报错了。
+​	这样就不报错了。接下来实现细节了
+
+​	**createElement**接收参数(babel会自动调用这个函数并且把参数都放到对应的位置上)，返回虚拟dom - vnode，return出来的值就给ReactDOM.render函数了,为了方便把children全部传下去，要给children加...，同时为了建立树状图，需要把children放到props里,因为children只有一个文本的时候与其他节点的格式不太像，所以转换一下createTextNode
+
+```js
+function createElement(type, props, ...children) {
+  return {
+    type: type,
+    props: {
+      ...props,
+      children: children.map(child => 
+        typeof child === 'object' ? child : createTextNode(child)
+      )
+    }
+  }
+}
+
+function createTextNode(text) {
+  return {
+    type: "TEXT",
+    props: {
+      children: [],
+      nodeValue: text
+    }
+  }
+}
+```
+
+​	**render**就是把vnode变成node，并把node更新到container。第一件事是生成一个node（createNode）根据谁来创建呢，我们的节点类型很多，如文本节点，html节点，（class，function）肯定是不同的函数来进行处理。通过type值就可以判断节点类型。第一步只能处理最外层，如果要处理children则必须递归，children是一个数组，写个reconcilerChildren。我们要先遍历它的children,对每个子元素再做一次render。现在可以渲染出节点了，但是还没有塞内容，如className等。这些内容都在props里，遍历props里的值把它放到node里我们写一个函数叫updateNode做这件事。 现在处理function类型组件，
+
+```js
+function render(vnode, container) {
+  const node = createNode(vnode)
+  container.appendChild(node )
+}
+
+function createNode(vnode) {
+  const { type, props } = vnode
+  let node
+  if(type === "TEXT") {
+    node = createTextNode()
+  } else if(typeof type === 'function') {
+    node = type.isReactComponent ? updateClassComponent : updateFunctionComponent(vnode)
+  } else if(type){
+    node = document.createElement(type)
+  } else {
+    node = document.createDocumentFragment()
+  }
+
+  updateNode(node, props)
+  reconcilerChildren(props.children, node)
+  return node
+}
+
+function updateFunctionComponent(vnode) {
+  const { type, props } = vnode // type就是函数的名字
+  const vvnode = type(props) // 得到虚拟节点
+  const node = createNode(vvnode)
+  return node
+}
+
+function updateClassComponent(vnode) {
+  const { type, props } = vnode
+  const cmp = new type(props)
+  const vvnode = cmp.render()
+  const node = createNode()
+  return node
+}
+
+class Component {
+  static isReactComponent = {}
+	constructor(props) {
+    this.props = props
+  }
+}
+
+function updateNode(node, nextValue) {
+  Object.keys(nextValue)
+    .filter(k => k !== "children")
+  	.forEach(k => { 
+    	if(k.slice(0,2)==='on') {
+        let eventName = k.slice(2).toLowerCase()
+        node.addEventListener(eventName, nextValue[k]) 
+      } else {
+        node[k] = nextValue[k]
+      }
+  	})
+}
+
+function reconcilerChildren(children, node) {
+  for(let i=0; i<children.length; i++) {
+    let child = children[i]
+    if(Array.isArray(child)) {
+      for(let j=0; j<child.length; j++ ) {
+        render(child[j], node)
+      }
+    }
+    render(children[i], node)
+  }
+}
+```
+
+
 
 
 
@@ -751,52 +799,6 @@ export default {
 ​	`UI = render(data)`
 
 ​	Hooks 的本质：一套能够使函数组件更强大、更灵活的“钩子”
-
-**useState**
-
-```js
-const [name, setName] = useState('Nicolas')
-setName('hyh')
-console.log(name) // hyh
-```
-
-**useEffect**
-
-```js
-useEffect(callBack) // 1.每次渲染都会执行副作用
-
-useEffect(()=>{
-  ...
-}, [])	// 2.只调用一次副作用
-
-useEffect(() => {
-  console.log('count变化触发')
-}, [count]) // 3. 只有count变化会触发副作用
-
-useEffect(()=>{
-  ...
-  return ()=>{
-  }
-}, []) // 3.return内的内容将会在卸载时调用副作用（清除函数）
-```
-
-**useCount**
-
-​	表示state可以对外共享了
-
-```jsx
-const useCount = (initialCount = 0) => {
-	const [count, setCount] = useState(initialCount)
-  return [count, () => setCount(count+1), () => setCount(count-1)]
-}
-
-export default () => {
-  const [count, increment, decrement] = useCount(1)
-  return (
-  	<div>666</div>
-  )
-}
-```
 
 
 
