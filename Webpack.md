@@ -1,3 +1,37 @@
+# 模块化
+
+## CommonJs
+
+```js
+require('./moduleA')
+var m = require('./moduleB')
+console.log(m)
+
+// moduleA
+var m = 1
+module.exports = m
+```
+
+​	commonJs是同步的，然后有了AMD，是异步的模块化规范
+
+## AMD
+
+```js
+require(['moduleA', 'moduleB'], function(moduleA, moduleB) {
+  console.log(moduleB) // 通过回调的方式
+})
+
+// moduleA
+define(function(require) {
+  var m = require('moduleB')
+	setTimeout(() => { console.log(m) })
+})
+```
+
+​	AMD在node环境下还需要一个加载器脚本，常见的就是require.js
+
+⚠️【爪哇 - 49】
+
 # entry
 
 ​	可以接收字符串，数组，对象
@@ -33,7 +67,7 @@ hash的作用就是缓存
 
 ​	模块解析，webpack默认只认识json和js ，其他的就需要loader了
 
-🌰 css-loader
+🌰 **css-loader**
 
 ​	是把css的东西放到js中去，css in js方式，所以还需要style-loader，把js里的内容提取出来，在html中创建style标签并放入内容
 
@@ -48,7 +82,7 @@ module: {
 }
 ```
 
-🌰 css modles
+🌰 **css modules**
 
 ```js
 module: {
@@ -69,7 +103,7 @@ module: {
 }
 ```
 
-🌰 postcss-loader
+🌰 **postcss-loader**
 
 ​	css后处理器，可以帮忙加前缀，帮我们处理css3之类的东西
 
@@ -112,11 +146,34 @@ module.exports = {
 }
 ```
 
+🌰 **file-loader**
+
+​	处理图片，第三方字体，txt呀，word之类
+
+```js
+module: {
+  rules: [
+    {
+      test: '/\.(png|gif|jpeg)$/',
+      use: [
+        {
+          loader: 'file-loader',
+          options: {
+            name: "[name][hash:6].[ext]",
+           	outputPath: "images/"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
 
 
 
+⚠️ cdn 其实就是把打包后的文件上传到了cdn服务器 - 第一次访问cdn是快于普通的 - 有缓存以后 就一样了
 
-
+1.14.19
 
 # Plugin
 
