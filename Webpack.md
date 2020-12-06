@@ -446,6 +446,14 @@ if(module.hot) {
 // excludes: path.resolve(__dirname, "./nodule_modules")
 ```
 
+​	此外还可以将 Babel 编译过的文件缓存起来，下次只需要编译更改过的代码文件即可，这样可以大幅度加快打包时间
+
+```js
+loader: 'babel-loader?cacheDirectory=true'
+```
+
+
+
 
 
 ## Resolve
@@ -516,6 +524,32 @@ output: {
 ```
 
 
+
+## HappyPack
+
+​	HappyPack 可以将 Loader 的同步执行转换为并行的，这样就能充分利用系统资源来加快打包效率了
+
+```js
+loader: 'happypack/loader?id=happybabel'
+// id 后面的内容对应下面
+
+plugins: [
+  new HappyPack({
+    id: 'happybabel',
+    loaders: ['babel-loader?cacheDirectory'],
+    // 开启 4 个线程
+    threads: 4
+  })  
+]
+```
+
+
+
+
+
+
+
+## -
 
 ## 压缩css
 
