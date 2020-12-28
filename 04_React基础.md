@@ -9,6 +9,12 @@
 这使得 React 的适用范围变得足够广，无论是 Web、Native、VR，甚至 Shell 应用都可以进行开发。这也是 React 的优势。
 ​	但作为一个视图层的框架，React 的劣势也十分明显。它并没有提供完整的一揽子解决方 案，在开发大型前端应用时，需要向社区寻找并整合解决方案。虽然一定程度上促进了社区的繁荣，但也为开发者在技术选型和学习适用上造成了一定的成本。
 
+# 为什么React使用jsx
+
+​	JSX 更像是 React.createElement 的一种语法糖。语法非常的简洁，可读性强，并且没有引入额外的概念。尤其是像模板（引入新的概念），模板字符串（代码结构更复杂）之类的。并且非常的纯粹，组件为基本单位。
+
+​	在 React 中，关注点的基本单位是组件。在接触一段时间 React 开发后，你会发现 React 单个组件是高内聚的，组件之间耦合度很低。
+
 # setState
 
 ​	直接使用 `this.state.key = value` 方式来更新状态，这种方式 React 内部无法知道我们修改了组件，因此也就没办法更新到界面上。
@@ -296,31 +302,6 @@ MyComponent.propTypes = {
 
 # React生命周期
 
-render阶段：纯净且没有副作用，可能会被React暂停，中止或重新启动
-
-```js
-constructor
-getDirevedStateFromFrops // newProps, setState, forceUpdate触发
-shouldComponentUpdate
-render
-```
-
-preCommit阶段：可以读取DOM
-
-```js
-getSnapShotBeforeUpdate
-```
-
-commit阶段：可以使用DOM，运行副作用，安排更新
-
-```js
-componentDidMount
-componentDidUpdate
-componentWillUnmount
-```
-
-⚠️即使你的 `props` 没有任何变化，由父组件的 `state` 的改动导致的 `render`，`getDirevedStateFromFrops`这个生命周期依然会被调用
-
 ## 执行流程
 
 👋**挂载阶段**
@@ -347,6 +328,18 @@ componentWillUnmount
 - 初始化组件的 state
 - 给事件处理方法绑定 this
 
+​    当类属性开始流行之后，React 社区的写法发生了变化，即去除了 constructor。
+
+```js
+class Counter extends React.Component {
+   state = {
+      count: 0,
+   }
+}
+```
+
+
+
 ## getDerivedStateFromProps
 
 ```js
@@ -366,7 +359,7 @@ static getDerivedStateFromProps(props, state)
 
 ## render
 
-​	这个函数只做一件事，就是根据状态 `state` 和属性 `props` **渲染组件**，所以不要在这个函数内做其他业务逻辑
+​	这个函数只做一件事，就是根据状态 `state` 和属性 `props` **渲染组件**，所以不要在这个函数内做其他业务逻辑。render 函数应该是一个纯函数，不应该在里面产生副作用，比如调用 setState 或者绑定事件。因为 render 函数在每次渲染时都会被调用，而 setState 会触发渲染，就会造成死循环。绑定事件因为容易被频繁调用注册。
 
 ​	组件初始化的时候render方法的作用是**生成虚拟dom**，然后虚拟dom到真实dom是通过`ReactDOM.render`方法实现。当更新的时候同样会在render方法中生成新的虚拟dom，然后借助diff算法定位出两个虚拟dom的差异，从而针对发生变化的真实dom做定向更新。
 
@@ -377,6 +370,7 @@ static getDerivedStateFromProps(props, state)
 ⚠️ 注意
 
 1. 在 `componentDidMount` 中调用 `setState` 会触发一次额外的渲染，多调用了一次 `render` 函数，由于它是在浏览器刷新屏幕前执行的，所以用户对此没有感知，但是我们应当在开发中避免这样使用，因为这样会带来一定的性能问题，我们尽量在 `constructor` 中初始化我们的 `state` 对象。
+2. React Native 场景下，componentDidMount 并不意味着真实的界面已绘制完毕。由于机器的性能所限，视图可能还在绘制中。
 
 ## shouldComponentUpdate
 
@@ -405,7 +399,7 @@ this.setState({number: this.state.number})
 getSnapshotBeforeUpdate(prevProps, prevState)
 ```
 
-1. 用于读取最新的 DOM 数据。
+1. 用于读取最新的 DOM 数据。在 DOM 更新发生前被调用。
 2. 两个参数 `prevProps` 和 `prevState`，表示更新之前的 `props` 和 `state`。
 3. 这个函数必须要和 `componentDidUpdate` 一起使用，并且要有一个返回值，默认是 `null`，这个返回值作为第三个参数传给 `componentDidUpdate`。
 
@@ -454,11 +448,11 @@ componentDidUpdate(prevProps, prevState, snapshot)
 
 ## componentWillUnmount
 
-​	可以执行一些清理工作，比如清除定时器，取消未完成的网络请求，或清理事件监听等。
+​	可以执行一些清理工作，比如清除定时器，取消未完成的网络请求，或清理事件监听等。一个比较常见的 Bug 就是忘记在 componentWillUnmount 中取消定时器，导致定时操作依然在组件销毁后不停地执行。
 
+## componentDidCatch
 
-
-​	⚠️React 16 提供了一个内置函数 **componentDidCatch**，如果 render() 函数抛出错误，则会触发该函数，打印错误日志，并且显示回退的用户界面。它的出现，解决了早期的 React 开发中，一个小的组件抛出错误将会破坏整个应用程序的情况
+​	错误边界是一种 React 组件，这种组件可以捕获并打印发生在其子组件树任何位置的 JavaScript 错误，并且，它会渲染出备用 UI。它的出现，解决了早期的 React 开发中，一个小的组件抛出错误将会破坏整个应用程序的情况
 
 ## --- 16.3以前 ---
 
@@ -477,11 +471,46 @@ componentDidUpdate(prevProps, prevState, snapshot)
 - `render`
 - `componentDidUpdate(prevProps, prevState)`
 
-## componentWillReceiveProps
+## UNSAFE_componentWillReceiveProps
 
-​	只要父组件更新就会触发
+​	只要父组件更新就会触发。当 getDerivedStateFromProps 存在时，UNSAFE_componentWillReceiveProps 不会被调用。
+
+## UNSAFE_componentWillMount
+
+​	服务器端渲染的时候，如果在该函数里面发起网络请求，拉取数据，那么会在服务器端与客户端分别执行一次。
+
+## UNSAFE_componentWillUpdate
+
+​	同样已废弃，因为后续的 React 异步渲染设计中，可能会出现组件暂停更新渲染的情况，该方法可能会被多次调用。
 
 
+
+## Fiber相关
+
+render阶段：纯净且没有副作用，可能会被React暂停，中止或重新启动
+
+```js
+constructor
+getDirevedStateFromFrops // newProps, setState, forceUpdate触发
+shouldComponentUpdate
+render
+```
+
+preCommit阶段：可以读取DOM
+
+```js
+getSnapShotBeforeUpdate
+```
+
+commit阶段：可以使用DOM，运行副作用，安排更新
+
+```js
+componentDidMount
+componentDidUpdate
+componentWillUnmount
+```
+
+⚠️即使你的 `props` 没有任何变化，由父组件的 `state` 的改动导致的 `render`，`getDirevedStateFromFrops`这个生命周期依然会被调用
 
 # 高阶组件
 
@@ -710,3 +739,7 @@ function Dialog(props) {
 
 
 # @
+
+🍇 函数组件和类组件有什么区别
+
+​	相较于类组件，函数组件更纯粹、简单、易测试。 这是它们本质上最大的不同。

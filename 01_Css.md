@@ -96,7 +96,38 @@ a:link:hover {
 
 
 
+# 矩阵
 
+
+
+### 2d
+
+```js
+transform: matrix(a, b, c, d, e, f)
+// a: 缩放x轴 d: 缩放y轴
+// e: 水平偏移距离
+// f: 垂直偏移距离
+
+transform: matrix(1, 0, 0, 1, 30, 30)
+```
+
+
+
+​	矩阵比正常api性能好多了，因为所有api都是矩阵来算的
+
+https://segmentfault.com/a/1190000010688390
+
+### 3d
+
+较复杂
+
+手动这么写是不是很复杂，以后用webpack的话可以用css-matrix3d直接转换（transform，translate等）
+
+
+
+animate.css - 动画库
+
+tridiv.com - 3d的css
 
 
 
