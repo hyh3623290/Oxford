@@ -120,10 +120,14 @@ Reflect.ownKeys(obj)
 class Person {
   constructor(name) {
     this.name = name
+    console.log(Person.c())
   }
   say() {}
   static create(name) {
     return new Person(name)
+  }
+  static c() {
+    return 666
   }
 }
 
@@ -321,77 +325,6 @@ for (const item of todos) {
 
 
 
-## 生成器
-
-​	Generator，避免异步回调嵌套太深
-
-```js
-const *foo() {
-  console.log('1')
-  return 2
-}
-const result = foo()
-console.log(result) // 生成器对象
-console.log(result.next()) // '1' { value: 2, done: true }
-```
-
-​	你发现调用生成器函数不会立即执行，而是得到一个生成器对象，只有next之后函数体才开始执行，执行到yield停下并会作为value。最大的特点是惰性执行，就是抽一下动一下
-
-🍇 **应用**
-
-```js
-const todos = {
-  life: ['a', 'b', 'c'],
-  learn: ['d', 'e', 'f'],
-  [Symbol.iterator]: function *() {
-    const all = [...this.life, ...this.learn]
-		for(const item of all) { // 自动生成迭代器接口
-      yield item
-    }
-  }  
-}
-```
-
-🍇 **异步方案**
-
-```js
-function *main() {
-  try {
-    const users = yield ajax('url')
-    console.log(users)
-    const goods = yield ajax('url2')
-    console.log(goods)    
-  } catch(e) {
-    ...
-  }
-}
-
-const g = main()
-const result = generator.next()
-result.value.then(res => {
-  const result2 = g.next(res)
-  result2.value.then(res => {
-    g.next(res)
-  })
-})
-
-// 更通用 -> 递归
-function handleResult(result) {
-  if(result.done) return
-  result.value.then(res => {
-    handleResult(g.next(res))
-  }, error => {
-    g.throw(error)
-  })
-}
-handleResult(g.next())
-// 接下来稍微封装一下，目前社区已有更完善的库，就是co
-```
-
-
-
-
-
 
 
 ## ES2017
@@ -427,6 +360,20 @@ name.padStart(5, '-') => '--tom'
 ### Event Loop
 
 ​	异步任务会被放进消息队列中，当调用栈的代码为空时，event loop就会从消息队列中取出任务放入调用栈中。所以它就做一件事情，监听调用栈和消息队列。
+
+🍇 执行时序 / 宏任务 & 微任务
+
+​	回调队列中的任务成为宏任务，宏任务执行过程中可能会加上一些额外的需求，可以选择作为一个新的宏任务进到队列中进行排队，但是也可以作为当前任务的微任务，直接在当前任务执行过后立即执行，而不是等到末尾继续排队。Promise的回调会作为微任务执行。微任务就是后面才提出的，目的就是为了提高整体的响应能力
+
+​	打个比方，我办存款业务排队，办完之后突然想办个信用卡，则不需要重新排队去取号。
+
+​	常用微任务：promise，MutationObserver，process.nextTick（Node），async，await
+
+​	其余大部分异步都是宏任务
+
+​	补充：eventloop：调用栈，消息队列，微任务队列。微任务队列会在调用栈情空时立即执行，并且处理期间新加入的微任务也会一同执行
+
+
 
 ### promise
 
@@ -503,17 +450,74 @@ Promise.race([request, timeout])
 
 
 
-🍇 执行时序 / 宏任务 & 微任务
 
-​	回调队列中的任务成为宏任务，宏任务执行过程中可能会加上一些额外的需求，可以选择作为一个新的宏任务进到队列中进行排队，但是也可以作为当前任务的微任务，直接在当前任务执行过后立即执行，而不是等到末尾继续排队。Promise的回调会作为微任务执行。微任务就是后面才提出的，目的就是为了提高整体的响应能力
 
-​	打个比方，我办存款业务排队，办完之后突然想办个信用卡，则不需要重新排队去取号。
+### 生成器
 
-​	常用微任务：promise，MutationObserver，process.nextTick（Node），async，await
+​	Generator，避免异步回调嵌套太深
 
-​	其余大部分异步都是宏任务
+```js
+const *foo() {
+  console.log('1')
+  return 2
+}
+const result = foo()
+console.log(result) // 生成器对象
+console.log(result.next()) // '1' { value: 2, done: true }
+```
 
-​	补充：eventloop：调用栈，消息队列，微任务队列。微任务队列会在调用栈情空时立即执行，并且处理期间新加入的微任务也会一同执行
+​	你发现调用生成器函数不会立即执行，而是得到一个生成器对象，只有next之后函数体才开始执行，执行到yield停下并会作为value。最大的特点是惰性执行，就是抽一下动一下
+
+🍇 **应用**
+
+```js
+const todos = {
+  life: ['a', 'b', 'c'],
+  learn: ['d', 'e', 'f'],
+  [Symbol.iterator]: function *() {
+    const all = [...this.life, ...this.learn]
+		for(const item of all) { // 自动生成迭代器接口
+      yield item
+    }
+  }  
+}
+```
+
+🍇 **异步方案**
+
+```js
+function *main() {
+  try {
+    const users = yield ajax('url')
+    console.log(users)
+    const goods = yield ajax('url2')
+    console.log(goods)    
+  } catch(e) {
+    ...
+  }
+}
+
+const g = main()
+const result = generator.next()
+result.value.then(res => {
+  const result2 = g.next(res)
+  result2.value.then(res => {
+    g.next(res)
+  })
+})
+
+// 更通用 -> 递归
+function handleResult(result) {
+  if(result.done) return
+  result.value.then(res => {
+    handleResult(g.next(res))
+  }, error => {
+    g.throw(error)
+  })
+}
+handleResult(g.next())
+// 接下来稍微封装一下，目前社区已有更完善的库，就是co
+```
 
 
 
