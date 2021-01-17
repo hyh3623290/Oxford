@@ -640,10 +640,6 @@ unsubscribe()
 
 
 
-## 
-
-
-
 
 
 ## 中间件与异步
@@ -940,7 +936,7 @@ export default connect(
 )()
 ```
 
-这会儿再打印props，发现dispatch的位置上放的是add，就可以这样。但是我又想要dispatch和add都有怎么办呢。其实mapDispatch即可以是对象，也可以是函数，如果想这样就用函数的写法然后一起返回
+​	这会儿再打印props，发现dispatch的位置上放的是add，就可以这样。但是我又想要dispatch和add都有怎么办呢。其实mapDispatch即可以是对象，也可以是函数，如果想这样就用函数的写法然后一起返回
 
 ```js
 export default connect(
