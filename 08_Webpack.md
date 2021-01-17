@@ -32,6 +32,38 @@ define(function(require) {
 
 ⚠️【爪哇 - 49】
 
+# 开始
+
+​	模块打包工具
+
+```js
+yarn add webpack webpack-cli --dev
+
+yarn webpack --version
+
+之后就可以用 yarn webpack 进行打包，就会自动从src下面的index.js开始
+
+打包后会自动生成dist，直接script引入dist下面的index即可使用
+```
+
+
+
+# 配置文件
+
+webpack.config.js
+
+```js
+module.exports = {
+  entry: "./src/index.js",
+  output: {
+    path: path.resolve(__dirname, "./dist")
+    filename: "bundle.js"
+  }
+}
+```
+
+任务2，6集，模块打包原理
+
 # entry
 
 ​	可以接收字符串，数组，对象
