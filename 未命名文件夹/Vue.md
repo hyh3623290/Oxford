@@ -151,7 +151,7 @@ set其实就是又做了一层defineProperty
 
 ​	另外还有 `keep-alive` 独有的生命周期，分别为 `activated` 和 `deactivated` 。用 `keep-alive` 包裹的组件在切换时不会进行销毁，而是缓存到内存中并执行 `deactivated` 钩子函数，命中缓存渲染后会执行 `actived` 钩子函数。
 
-​	最后就是销毁组件的钩子函数 `beforeDestroy` 和 `destroyed`。前者适合移除事件、定时器等等，否则可能会引起内存泄露的问题。然后进行一系列的销毁操作，如果有子组件的话，也会递归销毁子组件，所有子组件都销毁完毕后才会执行根组件的 `destroyed` 钩子函数。
+​	最后就是销毁组件的钩子函数 `beforeDestroy` 和 `destroyed`。前者适合移除事件、定时器等等，否则可能会引起内存泄露的问题。然后进行一系列的销毁操作，如果有子组件的话，也会递归销毁子组件，所有子组件都销毁完毕后才会执行根组件的 `destroyed` 钩子函数。（解绑自定义事件event.$off，解绑自定义的dom事件如window.scroll）
 
 
 
@@ -579,7 +579,13 @@ export default {
 
 
 
+# Vue原理
 
+​	MVVM，组件化，响应式，vdom和diff，模版编译，渲染过程
+
+
+
+数据驱动视图（MVVM，setState）
 
 
 

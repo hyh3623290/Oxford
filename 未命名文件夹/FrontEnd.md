@@ -126,29 +126,61 @@ git push origin master
 
 
 
+# 模块化
+
+## commonJS规范
+
+​	NodeJS 
+
+```js
+// moduleA.js
+module.exports = 'hello moduleA'
+
+// 使用
+const moduleA = require('./moduleA') // 会先执行moduleA文件代码
+console.log(moduleA)
+```
+
+**模块单例**	
+
+​	如果在不同的模块加载了同一个模块，会得到相同的结果，即使导出`new Date()`
+
+**同步**
+
+​	读取模块是同步的，所以浏览器端不适合，一般用AMD
 
 
 
+## AMD
+
+​	异步的模块定义：Async....，用来满足web开发需要，比较出名的是require.js，依旧会保持模块单例
+
+```js
+require(['moduleA', 'moduleB'], function(moduleA, moduleB) {
+  console.log(moduleB)
+})
+```
 
 
 
+```js
+define(function(require) {
+  var m = require('xxx')
+  return m
+})
+```
 
 
 
+## UMD
+
+​	有时候我们写的模块需要同时在浏览器和Nodejs中运行，UMD可以帮助我们同时兼容AMD和CommonJS
 
 
 
+## ES Modules
 
-
-
-
-
-
-
-
-
-
-
+# 浏览器内置对象
 
 
 
