@@ -569,7 +569,23 @@ requestIdleCallback(calc)
 
 ```js
 const taskQueue = createTaskQueue()
-const subTask = null
+let subTask = null
+let pendingCommit = null
+
+function commitAllWork(fiber) {
+  fiber.effects.forEach(item => {
+    if(item.effectTag === "placement") {
+      let fiber = item
+      let parentFiber = item.parent
+      while(parentFiber.tag === "class_component") {
+        parentFiber = parentFiber.parent
+      }
+      if(fiber.tag === "host_component") {
+        parentFiber.stateNode.appendChild(fiber.stateNode)
+      }
+    }
+  })
+}
 
 function render(element, dom) {
   taskQueue.push({
@@ -585,7 +601,7 @@ function render(element, dom) {
 function performTask(deadline) {
   // 只负责调度任务
   workLoop(deadline)
-  if(subTask || !taskQueue.isEmpty()) {
+  if(subTask || !askQueue.isEmpty()) {
     requestIdleCallback(performTask)
   }
 }
@@ -597,12 +613,104 @@ function workLoop(deadline) {
   while(subTask && deadline.timeRemaining() > 1) {
     subTask = executeTask(subTask)
   }
+  if(pendingCommit) {
+    commitAllWork(pendingCommit)
+  }
 }
 
-function getFirstTask() {}
+function getFirstTask() {
+  const task = taskQueue.pop()
+  return { // 第一个任务不需要type
+    props: task.props,
+    stateNode: task.dom,
+    tag: "host_root", // 标记顶层，对具体节点类型进行分类
+    effects: [], // 存储需要修改的fiber对象
+    child: null
+  }
+}
+
+function reconcileChildren(fiber, children) {
+  const arrifiedChildren = arrified(children) // 转换成数组
+  let index = 0
+  let numberOfElements = arrifiedChildren.length
+  let element = null
+  let newFiber = null
+  let prevFiber = null
+
+  while(index < numberOfElements) {
+    element = arrifiedChildren[index]
+    newFiber = {
+      type: element.type,
+      props: element.props,
+      tag: getTag(element),
+      effects: [],
+      effectTag: "placement", // 标识接下来对操作
+      parent: fiber
+    }
+
+    newFiber.stateNode = createStateNode(newFiber)
+
+    if(index == 0) {
+      fiber.child = newFiber
+    } else {
+      prevFiber.sibling = newFiber
+    }
+    prevFiber = newFiber
+    
+    index++
+  }
+}
+
+function createStateNode(fiber) {
+  if(fiber.tag === "host_component") {
+    return createDOMElement(fiber)
+  } else {
+    return createReactInstance(fiber)
+  }
+}
+
+function createReactInstance(fiber) {
+  let instance = null
+  if(fiber.tag === "class_component") {
+    instance = new fiber.type(fiber.props)
+  } else {
+    instance = fiber.type(fiber.props)
+  }
+  return instance
+}
+
+function getTag(vdom) {
+  if(typeof vdom.type === 'string') {// text div span等
+    return "host_component" // 普通节点
+  } else if(Object.getPrototypeOf(vdom.type) === Component) {
+    //组件对话type是构造函数继承自component
+    return "class_component"
+  } else {
+    return "function_component"
+  }
+}
 
 function executeTask(fiber) {
-  
+  if(fiber.tag === "class_component") {
+    reconcileChildren(fiber, fiber.stateNode.render())
+  } else {
+    reconcileChildren(fiber, fiber.props.children) // 构建子节点
+  }
+  if(fiber.child) {
+    return fiber.child
+  }
+
+  let currentExecutelyFiber = fiber
+  while(currentExecutelyFiber.parent) {
+    currentExecutelyFiber.parent.effects = currentExecutelyFiber.parent.effects.concat(
+      currentExecutelyFiber.effects.concat([currentExecutelyFiber])
+    )
+    if(currentExecutelyFiber.sibling) {
+      return currentExecutelyFiber.sibling
+    }
+    currentExecutelyFiber = currentExecutelyFiber.parent
+  }
+  pendingCommit = currentExecutelyFiber
 }
 
 function createTaskQueue() {
