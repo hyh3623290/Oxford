@@ -205,6 +205,20 @@ function myInstanceof(left, right) {
 
 ​	1
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # ^_^
 
 周末可以看手写代码的题，如fiber，diff等，周内可以看简单的，也可以看interview的

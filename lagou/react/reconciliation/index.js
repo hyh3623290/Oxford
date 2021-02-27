@@ -16,6 +16,7 @@ const taskQueue = createTaskQueue()
  */
 let subTask = null
 
+// 等待被提交
 let pendingCommit = null
 
 const commitAllWork = fiber => {
@@ -78,7 +79,7 @@ const commitAllWork = fiber => {
     }
   })
   /**
-   * 备份旧的 fiber 节点对象
+   * 备份旧的 fiber 节点对象 根节点fiber对象
    */
   fiber.stateNode.__rootFiberContainer = fiber
 }
@@ -117,17 +118,12 @@ const getFirstTask = () => {
 
 const reconcileChildren = (fiber, children) => {
   /**
-   * children 可能对象 也可能是数组
+   * children 可能对象 也可能是数组,
+   * render的时候传的就是对象，createElement返回的就是数组
    * 将children 转换成数组
    */
   const arrifiedChildren = arrified(children)
-  /**
-   * 循环 children 使用的索引
-   */
   let index = 0
-  /**
-   * children 数组中元素的个数
-   */
   let numberOfElements = arrifiedChildren.length
   /**
    * 循环过程中的循环项 就是子节点的 virtualDOM 对象
@@ -142,7 +138,7 @@ const reconcileChildren = (fiber, children) => {
    */
   let prevFiber = null
 
-  let alternate = null
+  let alternate = null // 备份fiber节点
 
   if (fiber.alternate && fiber.alternate.child) {
     alternate = fiber.alternate.child
@@ -256,6 +252,12 @@ const executeTask = fiber => {
   let currentExecutelyFiber = fiber
 
   while (currentExecutelyFiber.parent) {
+    /**
+     * while是从左侧没有子节点开始
+     * current先是左侧，完了以后是右侧，让当前父级包含左侧和右侧
+     * 父级和子集进行合并，子集和当前进行合并
+     * while走完current就是最外层的fiber对象root
+     */
     currentExecutelyFiber.parent.effects = currentExecutelyFiber.parent.effects.concat(
       currentExecutelyFiber.effects.concat([currentExecutelyFiber])
     )
@@ -283,6 +285,7 @@ const workLoop = deadline => {
   }
 
   if (pendingCommit) {
+    // 就是执行第二阶段的方法
     commitAllWork(pendingCommit)
   }
 }
@@ -302,7 +305,7 @@ const performTask = deadline => {
   }
 }
 
-export const render = (element, dom) => {
+export const render = (element, dom) => {// 初始时jsx是root的子集
   /**
    * 1. 向任务队列中添加任务
    * 2. 指定在浏览器空闲时执行任务
