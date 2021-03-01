@@ -27,6 +27,8 @@ function getType(obj){
 
 # this指向问题
 
+
+
 # == vs ===
 
 # 闭包

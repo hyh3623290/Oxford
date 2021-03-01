@@ -2,9 +2,55 @@
 
 # Redux
 
-## Redux核心
+## createStore
 
-​	
+```js
+const store = createStore(reducer)
+// 第一个参数是reducer，第二个参数是store的初始值，会传给reducer的第一个参数
+// 所以action是在store里接收的，我一直以为是在reducer接收的
+// store接收action并将action分发给reducer
+
+// 其实就是传给store，store内部会调用reducer，再把action发给reducer
+```
+
+
+
+## reducer
+
+```js
+var initialState = {
+  count: 0
+}
+function reducer(state = initialState, action) {
+  switch(action.type) {
+    case 'increment':
+      return { count: state.count + 1 }
+    default:
+      return state
+  }
+  return state
+}
+// 第一个参数就是createStore的第二个参数
+```
+
+
+
+## action
+
+```js
+store.dispatch({ type: 'increment' })
+// 会传给reducer的第二个参数
+```
+
+
+
+## subscribe
+
+```js
+store.subscribe(() => {
+  console.log(store.getState())
+})
+```
 
 
 
@@ -12,9 +58,323 @@
 
 ## React + Redux
 
-## Redux中间件
+​	就多了两个：Provider 和 connect
 
-## 开发Redux中间件
+### Provider
 
-## Redux综合案例
+```jsx
+<Provider store={store}>
+	<App />
+</Provider>
+```
 
+### connect
+
+1. connect 帮助我们订阅store，当store中的状态发生改变时，帮我们重新渲染组件
+2. 让我们获取store的状态，将状态通过组件的props属性映射给组件
+3. 让我们获取dispatch
+
+```js
+const mapStateToProps = state => ({
+  // 要返回一个对象，会映射到props上，不管写啥都可以，比如随便写个a:'123',也可以通过props.a拿到
+  count: state.count
+})
+
+const mapDispatchToProps = dispatch => ({
+  // 这个方法主要帮我们简化代码，实质就是把返回的对象映射到props属性当中
+  // props.increment
+  increment() {
+    dispatch({ type: 'increment' })
+  },
+  decrement() {
+    dispatch({ type: 'decrement' })
+  }
+})
+export default connect(mapStateToProps, mapDispatchToProps)(Counter)
+```
+
+### bindActionCreators
+
+​	上面 increment 和 decrement 中的 dispatch 是重复性代码
+
+```js
+const mapDispatchToProps = dispatch => ({
+  ...bindActionCreators({
+    increment() {
+      return { type: 'increment' }
+    }
+  }, dispatch)
+})
+```
+
+​	新建文件进行进一步的抽离
+
+```js
+// store/actions/counter.action.js
+export const increment = payload => ({ type: 'increment', payload })
+export const decrement = payload => ({ type: 'decrement', payload })
+export const increment_async = (payload) => dispatch => {
+  setTimeout(() => {
+    dispatch(increment(payload))
+  }, 2000)
+}
+
+// CounterComponent.js
+import * as counterActions from './store/actions/counter.action.js'
+
+const mapDispatchToProps = dispatch => bindActionCreators(counterActions, dispatch)
+```
+
+​	bindActionCreators 返回的就是一个对象
+
+
+
+### 拆分reducer
+
+​	在reducers文件夹下新建root.reducer.js
+
+```js
+import { combineReducers } from 'redux'
+
+// { counter: { count: 0 }, modal: { show: false } }
+export default combineReducers({
+  counter: CounterReducer,
+  modal: ModalReducer
+})
+
+// 所以现在要用state.modal.show来获取
+const mapStateToProps = state => ({
+  count: state.counter.count
+})
+```
+
+
+
+## 中间件
+
+​	本质上就是一个函数，通过这个函数拓展和增强redux应用程序。体现在对action的处理能力上，以前是直接给reducer处理，现在action会优先被中间件处理。
+
+### 开发redux中间件
+
+​	模板代码
+
+```js
+export default store => next => action => {}
+```
+
+​	它是一个函数，要求我们再返回一个函数，之后再返回一个函数，在最里面的函数可以执行自己的业务逻辑，最外层的函数给我提供了一个参数是store，最里面的参数是action，中间的函数提供了一个next，它是一个函数，当我们处理完action后要调用这个next，目的是把当前的action传递给reducer，或者说下一个中间件
+
+```js
+// middleware/logger.js
+export default function() {
+  return function(next) {
+    return function(action) {
+      console.log(action)
+      next(action)      
+    }
+  }  
+}
+// 上面的写法等价于
+export default store => next => action => {
+  console.log(action)
+  next(action)
+}
+
+// 手写thunk
+1. 当前这个中间件不关心你想执行什么样的异步操作
+2. 如果是异步，那你给我传个函数，如果是同步，给我传个正常action
+3. 异步代码要写在你传递的函数中
+4. 我调用你的时候会把dispatch传给你
+
+export default store => next => action => {
+  if(typeof action === 'function') {
+    return action(dispatch)
+  }
+  next(action)
+}
+```
+
+
+
+### 注册
+
+```js
+createStore(reducer, applyMiddleware(logger, test))
+// 执行顺序是从左往右
+```
+
+
+
+### 常用中间件
+
+#### redux-thunk
+
+#### redux-saga
+
+​	更加的强大：可以将异步操作从 Action Creator 文件中抽离出来，放在一个单独的文件中，这样项目代码就更加的可维护了。
+
+```js
+import createSagaMiddleware from 'redux-saga'
+const sagaMiddleware = createSagaMiddleware()
+
+createStore(reducer, applyMiddleware(sagaMiddleware))
+
+// 接下来引入下面这个saga文件，把名字传入run方法里
+sagaMiddleware.run(sagaName)
+```
+
+​	可以创建一个单独的文件来写异步代码了
+
+```js
+import { takeEvery, put } from 'redux-saga/effects'
+
+function *increment_async_fn(action) {
+  const { data } = yield axios.get('api')
+  yield put(increment(action.payload)) // 执行完异步在这里派发一个同步的action
+}
+
+export default function *postSaga() {
+  // 接收action
+  yield takeEvery(INCREMENT_ASYNC, increment_async_fn)
+}
+```
+
+1. takeEvery 这个方法是用来接收action的
+2. put 用来触发另一个 action 的，就跟 dispatch 一样
+3. 要求我们默认导出一个generator函数
+
+
+
+
+
+​	拆分saga，在sagas文件夹下新建root.saga.js
+
+```js
+import { all } from 'redux-saga/effects'
+import counterSaga from './counter.saga.js'
+import modalSaga from './modal.saga.js'
+
+// 依旧需要导出一个generator函数
+export default function *rootSaga() {
+  
+  yield all([
+    counterSaga(),
+    modalSaga()
+  ])
+}
+```
+
+​	然后需要引入的就是这个saga文件，再把引入的内容放到 `sagaMiddleware.run()` 参数里
+
+
+
+## redux-actions
+
+​	帮助我们简化actions代码和reducer代码，因为redux流程中大量的样板式代码读写很痛苦，比如创建大量的 action creator 函数，比如我们把action的type抽象成独立的常量，比如ruducer中通过switch case处理action
+
+```js
+// counter.action.js
+import { createAction } from 'redux-actions'
+
+// 帮助我们创建action creator函数
+export const increment = createAction('increment') // type值, 顺便也不需要常量了
+export const decrement = createAction('decrement')
+```
+
+
+
+```jsx
+// Component.js
+<Button onClick={props.increment}/>
+  
+<Button onClick={() => { props.increment(10) }}/>
+```
+
+
+
+```js
+// reducers/counter.reducer.js
+import { handleActions as createReducer } from 'redux-actions'
+
+function handleIncrement(state, action) {
+  return {
+    count: state.count + action.payload // 中间件自动加，不用写在createAction里
+  }
+}
+
+function handleDecrement(state, action) {
+  return {
+    count: state.count - 1
+  }
+}
+
+export default createReducer({
+  [increment]: handleIncrement,
+  [decrement]: handleDecrement
+}, initialState)
+```
+
+
+
+## shopingCart 案例
+
+​	redux 3， 53分
+
+
+
+
+
+# Hooks
+
+​	16.8 新增，对函数型组件进行增强，让函数型组件可以存储状态，能够处理副作用
+
+​	只要不是把数据转换为视图对就是副作用，比如获取dom元素，为dom元素添加事件，设置定时器及发送Ajax请求
+
+
+
+## 类组件的不足
+
+1. 缺少逻辑复用机制
+
+   渲染属性和高阶组件代码比较复杂，虽然复用逻辑，但都是在原有组件的外层又包裹了一层组件，又没有实际的渲染效果，层级过深变得十分臃肿，增加调试过程的难度，也降低了组件运行的效率
+
+2. 类组件经常会变的很复杂，难以维护
+
+   体现在生命周期函数当中，将一组相干的逻辑拆分到不同的生命周期函数中（比如挂载之后做个什么事，更新之后做个什么事），或者在一个生命周期中存在多个不相干的逻辑
+
+3. 不能够保证this指向的正确性
+
+   当我们给一个元素绑定事件，在事件处理函数当中我们去更改状态的时候，通常要更正函数内部的this指向，否则就会指向undefined，也使得类组件难以维护，而且代码看起来比较复杂
+
+
+
+## useState
+
+```jsx
+const [ count, setCount ] = useState(0);
+
+// 如果初始值是动态的也可以传一个函数，如,适用于只需要组件第一次执行的时候
+// 因为里面的函数只会被执行一次，后续重新渲染的时候不会执行
+const [ count, setCount ] = useState(() => {
+  return props.count || 0
+});
+
+<button onClick={() => { setCount(count + 1) }}></button>
+
+// 也可以传回调，因为是异步的，如果依赖这个新的值就要放到回调中
+setCount(count => {
+  return count + 1
+})
+```
+
+
+
+
+
+## useEffect
+
+
+
+# ^_^
+
+2.28（开始）
