@@ -90,6 +90,7 @@ const getFirstTask = () => {
    */
   const task = taskQueue.pop()
 
+  // 更新的时候会走这里setState时
   if (task.from === "class_component") {
     const root = getRoot(task.instance)
     task.instance.__fiber.partialState = task.partialState
@@ -119,12 +120,12 @@ const getFirstTask = () => {
 const reconcileChildren = (fiber, children) => {
   /**
    * children 可能对象 也可能是数组,
-   * render的时候传的就是对象，createElement返回的就是数组
+   * render的时候传给children的element就是对象，createElement返回的就是数组
    * 将children 转换成数组
    */
   const arrifiedChildren = arrified(children)
   let index = 0
-  let numberOfElements = arrifiedChildren.length
+  let numberOfElements = arrifiedChildren.length// 例子中只有两个子集
   /**
    * 循环过程中的循环项 就是子节点的 virtualDOM 对象
    */
@@ -141,7 +142,7 @@ const reconcileChildren = (fiber, children) => {
   let alternate = null // 备份fiber节点
 
   if (fiber.alternate && fiber.alternate.child) {
-    alternate = fiber.alternate.child
+    alternate = fiber.alternate.child // 第一个子节点的备份节点，下面的element是第一个子节点
   }
 
   while (index < numberOfElements || alternate) {
@@ -292,7 +293,8 @@ const workLoop = deadline => {
 
 const performTask = deadline => {
   /**
-   * 执行任务
+   * 执行任务, 大的任务要拆分成小的任务
+   * 需要循环去调用
    */
   workLoop(deadline)
   /**

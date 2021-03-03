@@ -369,6 +369,10 @@ setCount(count => {
 
 
 
+## useReducer
+
+​	另一种让函数组件保存状态的方式
+
 
 
 ## useEffect
