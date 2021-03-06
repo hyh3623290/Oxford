@@ -373,9 +373,129 @@ setCount(count => {
 
 ​	另一种让函数组件保存状态的方式
 
+```js
+function reducer(state, action) {
+  switch(action.type) {
+    case 'increment':
+      return state.count + 1
+    default:
+      return state
+  }
+  return state
+}
+```
+
+```js
+const [count, dispatch] = useReducer(reducer, 0) // 0是初始值
+onClick={() => dispatch({ type: 'increment' })}
+```
+
+​	有什么好处呢？这个组件的某一个组件想改变上面的这个count值，我们就不需要传递多个修改数据的方法了，比如上面这个让数值加一的方法，让数值减一的方法，我们可以把dispatch传递给子组件，子组件通过dispatch触发任意action来修改状态
+
+## useContext
+
+​	简化跨组件层级获取数据的代码
+
+```jsx
+const countContext = createContext()
+function App(){
+  return <countContext.Provider value={100}>
+  	<Foo />
+  </countContext.Provider>
+}
+function Foo() {
+  const count = useContext(countContext)
+  // 可以直接使用count
+}
+```
+
 
 
 ## useEffect
+
+### 模拟生命周期
+
+​	让函数型组件拥有处理副作用的能力，类似于生命周期函数
+
+```js
+useEffect(() => {}) // didMount, didUpdate
+useEffect(() => {}, []) // didMount
+useEffect(() => () => {}) // unMount
+```
+
+1. 可以按照用途对代码进行分类，不同的用途放到不同的useEffect
+2. 通常情况下挂载完成和更新完成时的代码一般是一样的，我们通过分类可以简化重复代码，使组件内部代码更加清晰，不用写两份在didMount和didUpdate了
+
+
+
+### 数据监测
+
+```js
+useEffect(() => { 
+	...
+}, [count])
+```
+
+
+
+### 异步操作
+
+​	useEffect 中的参数不能是异步函数，因为useEffect要返回清理资源的函数，如果是异步函数就变成了返回promise
+
+```js
+useEffect(() => {
+  (async () => {
+    await axios.get()
+  })()
+})
+```
+
+
+
+## useMemo
+
+​	非常类似于Vue中的计算属性，可以监测某个值的变化，根据变化值计算新值
+
+​	它会缓存计算结果，如果监测值没有发生变化，即使组件重新渲染，也不会重新计算。此行为可以有助于避免在每个渲染上进行昂贵的计算
+
+```js
+const result = useMemo(() => {
+  // 如果count值发生变化，此函数重新执行, 返回值会给到外面result
+  return count * 2
+}, [count])
+```
+
+
+
+## memo 方法
+
+​	父组件数据变化重新渲染，则子组件也会重新渲染
+
+​	性能优化，如果本组件中的数据没有发生变化，阻止组件更新，类似PureComponent 和 shouldComponent
+
+```js
+export default memo(ComponentName)
+```
+
+
+
+## useCallback
+
+​	性能优化，缓存函数，使组件重新渲染时得到相同的函数实例
+
+​	86
+
+```js
+
+```
+
+
+
+以上所有的方法都是从react里引入
+
+```js
+import { xxx } from 'react' 
+```
 
 
 
